@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Music Maker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Departure+Mono&display=swap" rel="stylesheet">
+  <!-- Tone.js for audio synthesis -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    @font-face {
+      font-family: 'Departure Mono';
+      src: url('https://fonts.cdnfonts.com/s/95903/DepartureMono-Regular.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px;
+    }
+
+    .timer-display {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: clamp(80px, 12vw, 152px);
+      font-weight: 500;
+      color: #222;
+      opacity: 0.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+      user-select: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .timer-display.active {
+      opacity: 1;
+    }
+
+    .controls {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      margin-bottom: 80px;
+    }
+
+    .time-btn {
+      background: #fff;
+      border: 1px solid #e3e3e3;
+      border-radius: 40px;
+      padding: 6px 14px;
+      height: 28px;
+      min-width: 79px;
+      font-family: 'Departure Mono', monospace;
+      font-size: 12px;
+      color: #757575;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .time-btn:hover {
+      border-color: #999;
+    }
+
+    .time-btn.active {
+      background: #222;
+      color: #ddd;
+      border-color: #222;
+    }
+
+    .time-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .start-btn {
+      background: #222;
+      border: none;
+      border-radius: 40px;
+      padding: 6px 14px;
+      height: 28px;
+      min-width: 79px;
+      font-family: 'Departure Mono', monospace;
+      font-size: 12px;
+      color: #ddd;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .start-btn:hover {
+      background: #333;
+    }
+
+    .device {
+      width: 380px;
+      height: 450px;
+      background: #efefef;
+      border: 1px solid #f1f1f1;
+      border-radius: 28px;
+      position: relative;
+      margin-top: 30px;
+      margin-bottom: 24px;
+    }
+
+    .device-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 257px;
+      background: linear-gradient(171deg, #C6C6C6 -4.92%, #E0E0E0 4.76%, #F6F6F6 85.82%);
+      border: 1px solid #F1F1F1;
+      border-radius: 24px 24px 4px 4px;
+      padding: 12px 10px;
+      box-shadow: -3px -2px 3px 0 rgba(255, 255, 255, 0.25) inset;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .screen-container {
+      background: #050000;
+      border: 1px solid #dbdbdb;
+      border-radius: 16px;
+      padding: 11px 10px;
+      width: 356px;
+      height: 232px;
+      position: relative;
+    }
+
+    .screen-container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      box-shadow: inset -3px -2px 3px 0px rgba(255, 255, 255, 0.25);
+    }
+
+    .pixel-grid {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: 1px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .pixel {
+      background: #292929;
+      border-radius: 4px;
+      aspect-ratio: 1;
+      transition: background-color 0.08s ease;
+      cursor: pointer;
+    }
+
+    .pixel:hover {
+      background: #3a3a3a;
+    }
+
+    .pixel.active {
+      background: #e4e4e4;
+      border-radius: 4px;
+    }
+
+    .pixel.active:hover {
+      background: #d4d4d4;
+    }
+
+    .pixel.current-step {
+      background: #171717;
+    }
+
+    .pixel.active.current-step {
+      background: #ffffff;
+    }
+
+    .device-bottom {
+      position: absolute;
+      top: 259px;
+      left: 0;
+      right: 0;
+      height: 189px;
+      background: linear-gradient(357deg, #C6C6C6 -13.02%, #E0E0E0 12.25%, #F6F6F6 100%);
+      border: 1px solid #F1F1F1;
+      border-radius: 4px 4px 24px 24px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: -3px -2px 3px 0 rgba(255, 255, 255, 0.25) inset;
+    }
+
+    .speaker {
+      margin-bottom: 26px;
+    }
+
+    .speaker svg {
+      width: 89.166px;
+      height: 38.665px;
+    }
+
+    .buttons-container {
+      width: 334px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tempo-control {
+      position: relative;
+      width: 40px;
+      height: 80px;
+    }
+
+    .tempo-track {
+      position: absolute;
+      left: 16px;
+      top: 0;
+      width: 8px;
+      height: 80px;
+      background: #222;
+      opacity: 0.2;
+      border: 1px solid #b0b0b0;
+      border-radius: 16px;
+      box-shadow: inset 3px 2px 2px 0px rgba(0, 0, 0, 0.65);
+    }
+
+    .tempo-knob {
+      position: absolute;
+      left: 0;
+      width: 40px;
+      height: 24px;
+      background: #222;
+      border: 3px solid #e3e3e3;
+      border-radius: 16px;
+      box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+      cursor: grab;
+      transition: top 0.05s ease;
+    }
+
+    .tempo-knob:active {
+      cursor: grabbing;
+    }
+
+    .tempo-label {
+      display: none;
+    }
+
+    .play-button {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(177deg, #C6C6C6 -78%, #E0E0E0 68.13%, #F6F6F6 100%);
+      border: 3px solid #F1F1F1;
+      border-radius: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.25), -3px -2px 3px 0 rgba(255, 255, 255, 0.25) inset;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+      position: relative;
+    }
+
+    .play-button:active {
+      transform: scale(0.97);
+    }
+
+    .play-button svg {
+      width: 16px;
+      height: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-family: 'Departure Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+    }
+
+    .footer-controls a {
+      color: #0d0d0d;
+      opacity: 0.4;
+      text-decoration: none;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+      padding: 4px 8px;
+    }
+
+    .footer-controls a:hover {
+      opacity: 0.7;
+    }
+
+    .footer-controls a.active {
+      opacity: 0.7;
+      color: #c44;
+    }
+
+    .footer-controls .separator {
+      color: #0d0d0d;
+      opacity: 0.2;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="timer-display" id="timer">00:00:00</div>
+  
+  <div class="controls">
+    <button class="time-btn" data-time="15">15 MINS</button>
+    <button class="time-btn" data-time="30">30 MINS</button>
+    <button class="time-btn" data-time="45">45 MINS</button>
+    <button class="time-btn" data-time="60">1 HOUR</button>
+    <button class="start-btn" id="startBtn">START</button>
+  </div>
+
+  <div class="device">
+    <div class="device-top">
+      <div class="screen-container">
+        <div class="pixel-grid" id="pixelGrid">
+          <!-- Pixels will be generated by JavaScript -->
+        </div>
+      </div>
+    </div>
+    
+    <div class="device-bottom">
+      <div class="speaker">
+        <svg xmlns="http://www.w3.org/2000/svg" width="90" height="40" viewBox="0 0 90 40" fill="none">
+  <g filter="url(#filter0_d_65_20)">
+    <circle cx="11.4417" cy="10.6527" r="1.9727" transform="rotate(-180 11.4417 10.6527)" fill="url(#paint0_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter1_d_65_20)">
+    <circle cx="11.4417" cy="28.0125" r="1.9727" transform="rotate(-180 11.4417 28.0125)" fill="url(#paint1_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter2_d_65_20)">
+    <circle cx="49.3176" cy="10.6527" r="1.9727" transform="rotate(-180 49.3176 10.6527)" fill="url(#paint2_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter3_d_65_20)">
+    <circle cx="49.3176" cy="28.0125" r="1.9727" transform="rotate(-180 49.3176 28.0125)" fill="url(#paint3_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter4_d_65_20)">
+    <circle cx="30.3797" cy="10.6527" r="1.9727" transform="rotate(-180 30.3797 10.6527)" fill="url(#paint4_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter5_d_65_20)">
+    <circle cx="30.3797" cy="28.0125" r="1.9727" transform="rotate(-180 30.3797 28.0125)" fill="url(#paint5_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter6_d_65_20)">
+    <circle cx="68.2556" cy="10.6527" r="1.9727" transform="rotate(-180 68.2556 10.6527)" fill="url(#paint6_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter7_d_65_20)">
+    <circle cx="68.2556" cy="28.0125" r="1.9727" transform="rotate(-180 68.2556 28.0125)" fill="url(#paint7_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter8_d_65_20)">
+    <circle cx="11.4417" cy="19.3325" r="1.9727" transform="rotate(-180 11.4417 19.3325)" fill="url(#paint8_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter9_d_65_20)">
+    <circle cx="1.97273" cy="19.3325" r="1.9727" transform="rotate(-180 1.97273 19.3325)" fill="url(#paint9_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter10_d_65_20)">
+    <circle cx="87.1936" cy="19.3325" r="1.9727" transform="rotate(-180 87.1936 19.3325)" fill="url(#paint10_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter11_d_65_20)">
+    <circle cx="49.3176" cy="19.3325" r="1.9727" transform="rotate(-180 49.3176 19.3325)" fill="url(#paint11_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter12_d_65_20)">
+    <circle cx="49.3176" cy="36.6923" r="1.9727" transform="rotate(-180 49.3176 36.6923)" fill="url(#paint12_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter13_d_65_20)">
+    <circle cx="49.3176" cy="1.97273" r="1.9727" transform="rotate(-180 49.3176 1.97273)" fill="url(#paint13_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter14_d_65_20)">
+    <circle cx="30.3797" cy="19.3325" r="1.9727" transform="rotate(-180 30.3797 19.3325)" fill="url(#paint14_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter15_d_65_20)">
+    <circle cx="30.3797" cy="36.6923" r="1.9727" transform="rotate(-180 30.3797 36.6923)" fill="url(#paint15_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter16_d_65_20)">
+    <circle cx="68.2556" cy="19.3325" r="1.9727" transform="rotate(-180 68.2556 19.3325)" fill="url(#paint16_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter17_d_65_20)">
+    <circle cx="30.3797" cy="1.97273" r="1.9727" transform="rotate(-180 30.3797 1.97273)" fill="url(#paint17_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter18_d_65_20)">
+    <circle cx="20.9107" cy="10.6527" r="1.9727" transform="rotate(-180 20.9107 10.6527)" fill="url(#paint18_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter19_d_65_20)">
+    <circle cx="20.9107" cy="28.0125" r="1.9727" transform="rotate(-180 20.9107 28.0125)" fill="url(#paint19_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter20_d_65_20)">
+    <circle cx="58.7866" cy="10.6527" r="1.9727" transform="rotate(-180 58.7866 10.6527)" fill="url(#paint20_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter21_d_65_20)">
+    <circle cx="58.7866" cy="28.0125" r="1.9727" transform="rotate(-180 58.7866 28.0125)" fill="url(#paint21_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter22_d_65_20)">
+    <circle cx="39.8486" cy="10.6527" r="1.9727" transform="rotate(-180 39.8486 10.6527)" fill="url(#paint22_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter23_d_65_20)">
+    <circle cx="39.8486" cy="28.0125" r="1.9727" transform="rotate(-180 39.8486 28.0125)" fill="url(#paint23_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter24_d_65_20)">
+    <circle cx="77.7246" cy="10.6527" r="1.9727" transform="rotate(-180 77.7246 10.6527)" fill="url(#paint24_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter25_d_65_20)">
+    <circle cx="77.7246" cy="28.0125" r="1.9727" transform="rotate(-180 77.7246 28.0125)" fill="url(#paint25_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter26_d_65_20)">
+    <circle cx="20.9107" cy="19.3325" r="1.9727" transform="rotate(-180 20.9107 19.3325)" fill="url(#paint26_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter27_d_65_20)">
+    <circle cx="58.7866" cy="19.3325" r="1.9727" transform="rotate(-180 58.7866 19.3325)" fill="url(#paint27_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter28_d_65_20)">
+    <circle cx="58.7866" cy="36.6923" r="1.9727" transform="rotate(-180 58.7866 36.6923)" fill="url(#paint28_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter29_d_65_20)">
+    <circle cx="58.7866" cy="1.97273" r="1.9727" transform="rotate(-180 58.7866 1.97273)" fill="url(#paint29_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter30_d_65_20)">
+    <circle cx="39.8488" cy="19.3305" r="1.9727" transform="rotate(-180 39.8488 19.3305)" fill="url(#paint30_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter31_d_65_20)">
+    <circle cx="39.8486" cy="36.6923" r="1.9727" transform="rotate(-180 39.8486 36.6923)" fill="url(#paint31_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter32_d_65_20)">
+    <circle cx="77.7246" cy="19.3325" r="1.9727" transform="rotate(-180 77.7246 19.3325)" fill="url(#paint32_linear_65_20)"/>
+  </g>
+  <g filter="url(#filter33_d_65_20)">
+    <circle cx="39.8486" cy="1.97273" r="1.9727" transform="rotate(-180 39.8486 1.97273)" fill="url(#paint33_linear_65_20)"/>
+  </g>
+  <defs>
+    <filter id="filter0_d_65_20" x="9.46899" y="8.67993" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter1_d_65_20" x="9.46899" y="26.0397" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter2_d_65_20" x="47.3449" y="8.67993" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter3_d_65_20" x="47.3449" y="26.0397" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter4_d_65_20" x="28.407" y="8.67993" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter5_d_65_20" x="28.407" y="26.0397" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter6_d_65_20" x="66.2829" y="8.67993" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter7_d_65_20" x="66.2828" y="26.0397" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter8_d_65_20" x="9.46899" y="17.3598" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter9_d_65_20" x="0" y="17.3598" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter10_d_65_20" x="85.2208" y="17.3598" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter11_d_65_20" x="47.3449" y="17.3598" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter12_d_65_20" x="47.3449" y="34.7196" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter13_d_65_20" x="47.3449" y="0" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter14_d_65_20" x="28.407" y="17.3598" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter15_d_65_20" x="28.407" y="34.7196" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter16_d_65_20" x="66.2828" y="17.3598" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter17_d_65_20" x="28.407" y="0" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter18_d_65_20" x="18.938" y="8.67993" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter19_d_65_20" x="18.938" y="26.0397" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter20_d_65_20" x="56.8139" y="8.67993" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter21_d_65_20" x="56.8139" y="26.0397" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter22_d_65_20" x="37.8759" y="8.67993" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter23_d_65_20" x="37.8759" y="26.0397" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter24_d_65_20" x="75.7518" y="8.67993" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter25_d_65_20" x="75.7518" y="26.0397" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter26_d_65_20" x="18.938" y="17.3598" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter27_d_65_20" x="56.8139" y="17.3598" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter28_d_65_20" x="56.8139" y="34.7196" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter29_d_65_20" x="56.8139" y="0" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter30_d_65_20" x="37.8761" y="17.3578" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter31_d_65_20" x="37.8759" y="34.7196" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter32_d_65_20" x="75.7518" y="17.3598" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <filter id="filter33_d_65_20" x="37.8759" y="0" width="4.34543" height="4.34543" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="0.4" dy="0.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_65_20"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_65_20" result="shape"/>
+    </filter>
+    <linearGradient id="paint0_linear_65_20" x1="11.4417" y1="8.67996" x2="11.4417" y2="12.6254" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint1_linear_65_20" x1="11.4417" y1="26.0398" x2="11.4417" y2="29.9852" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint2_linear_65_20" x1="49.3176" y1="8.67996" x2="49.3176" y2="12.6254" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint3_linear_65_20" x1="49.3176" y1="26.0398" x2="49.3176" y2="29.9852" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint4_linear_65_20" x1="30.3797" y1="8.67996" x2="30.3797" y2="12.6254" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint5_linear_65_20" x1="30.3797" y1="26.0398" x2="30.3797" y2="29.9852" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint6_linear_65_20" x1="68.2556" y1="8.67996" x2="68.2556" y2="12.6254" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint7_linear_65_20" x1="68.2556" y1="26.0398" x2="68.2556" y2="29.9852" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint8_linear_65_20" x1="11.4417" y1="17.3598" x2="11.4417" y2="21.3052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint9_linear_65_20" x1="1.97273" y1="17.3598" x2="1.97273" y2="21.3052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint10_linear_65_20" x1="87.1936" y1="17.3598" x2="87.1936" y2="21.3052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint11_linear_65_20" x1="49.3176" y1="17.3598" x2="49.3176" y2="21.3052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint12_linear_65_20" x1="49.3176" y1="34.7196" x2="49.3176" y2="38.665" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint13_linear_65_20" x1="49.3176" y1="2.51532e-05" x2="49.3176" y2="3.94543" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint14_linear_65_20" x1="30.3797" y1="17.3598" x2="30.3797" y2="21.3052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint15_linear_65_20" x1="30.3797" y1="34.7196" x2="30.3797" y2="38.665" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint16_linear_65_20" x1="68.2556" y1="17.3598" x2="68.2556" y2="21.3052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint17_linear_65_20" x1="30.3797" y1="2.51532e-05" x2="30.3797" y2="3.94543" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint18_linear_65_20" x1="20.9107" y1="8.67996" x2="20.9107" y2="12.6254" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint19_linear_65_20" x1="20.9107" y1="26.0398" x2="20.9107" y2="29.9852" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint20_linear_65_20" x1="58.7866" y1="8.67996" x2="58.7866" y2="12.6254" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint21_linear_65_20" x1="58.7866" y1="26.0398" x2="58.7866" y2="29.9852" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint22_linear_65_20" x1="39.8486" y1="8.67996" x2="39.8486" y2="12.6254" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint23_linear_65_20" x1="39.8486" y1="26.0398" x2="39.8486" y2="29.9852" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint24_linear_65_20" x1="77.7246" y1="8.67996" x2="77.7246" y2="12.6254" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint25_linear_65_20" x1="77.7246" y1="26.0398" x2="77.7246" y2="29.9852" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint26_linear_65_20" x1="20.9107" y1="17.3598" x2="20.9107" y2="21.3052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint27_linear_65_20" x1="58.7866" y1="17.3598" x2="58.7866" y2="21.3052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint28_linear_65_20" x1="58.7866" y1="34.7196" x2="58.7866" y2="38.665" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint29_linear_65_20" x1="58.7866" y1="2.51532e-05" x2="58.7866" y2="3.94543" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint30_linear_65_20" x1="39.8488" y1="17.3578" x2="39.8488" y2="21.3032" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint31_linear_65_20" x1="39.8486" y1="34.7196" x2="39.8486" y2="38.665" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint32_linear_65_20" x1="77.7246" y1="17.3598" x2="77.7246" y2="21.3052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+    <linearGradient id="paint33_linear_65_20" x1="39.8486" y1="2.51532e-05" x2="39.8486" y2="3.94543" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#414141"/>
+      <stop offset="1"/>
+    </linearGradient>
+  </defs>
+</svg>
+      </div>
+      
+      <div class="buttons-container">
+        <div class="tempo-control">
+          <div class="tempo-track"></div>
+          <div class="tempo-knob" id="tempoKnob"></div>
+          <div class="tempo-label" id="tempoLabel">120 BPM</div>
+        </div>
+        
+        <div class="play-button" id="playBtn">
+          <svg id="playIcon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 2L14 8L4 14V2Z" fill="#222" stroke="#222" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-controls">
+    <a href="#" id="randomiseBtn">RANDOMISE</a>
+    <span class="separator">/</span>
+    <a href="#" id="clearBtn">CLEAR</a>
+    <span class="separator">/</span>
+    <a href="#" id="muteBtn">MUTE</a>
+  </div>
+
+  <script>
+    // =====================================================
+    // INSTRUMENT CONFIGURATION
+    // =====================================================
+    const INSTRUMENTS = [
+      { id: 'kick', name: 'Kick', note: 'C1', type: 'membrane' },
+      { id: 'snare', name: 'Snare', note: 'D1', type: 'membrane' },
+      { id: 'hihat', name: 'Hi-Hat', note: 'F#1', type: 'metal' },
+      { id: 'clap', name: 'Clap', note: 'E1', type: 'membrane' },
+      { id: 'bass', name: 'Bass', note: 'C2', type: 'mono' },
+      { id: 'lead', name: 'Synth Lead', note: 'C3', type: 'poly' },
+      { id: 'pad', name: 'Synth Pad', note: 'E3', type: 'poly' },
+      { id: 'perc', name: 'Percussion', note: 'G2', type: 'metal' },
+      { id: 'tom', name: 'Tom', note: 'A1', type: 'membrane' },
+      { id: 'cymbal', name: 'Cymbal', note: 'G#1', type: 'metal' }
+    ];
+
+    const STEPS = 16;
+    const DEFAULT_BPM = 120;
+    const MIN_BPM = 60;
+    const MAX_BPM = 180;
+    const DEFAULT_VOLUME = -10; // dB
+
+    // =====================================================
+    // STATE
+    // =====================================================
+    let grid = {};
+    let synths = {};
+    let sequence = null;
+    let isPlaying = false;
+    let currentStep = 0;
+    let isMuted = false;
+    let bpm = DEFAULT_BPM;
+
+    // Timer state
+    let timerInterval = null;
+    let remainingSeconds = 0;
+    let selectedMinutes = 30;
+    let isTimerRunning = false;
+
+    // =====================================================
+    // DOM ELEMENTS
+    // =====================================================
+    const pixelGrid = document.getElementById('pixelGrid');
+    const timerDisplay = document.getElementById('timer');
+    const startBtn = document.getElementById('startBtn');
+    const timeBtns = document.querySelectorAll('.time-btn');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const tempoKnob = document.getElementById('tempoKnob');
+    const tempoLabel = document.getElementById('tempoLabel');
+    const randomiseBtn = document.getElementById('randomiseBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const muteBtn = document.getElementById('muteBtn');
+
+    // =====================================================
+    // INITIALIZE SYNTHS
+    // =====================================================
+    function initSynths() {
+      INSTRUMENTS.forEach(inst => {
+        let synth;
+        
+        switch (inst.type) {
+          case 'membrane':
+            synth = new Tone.MembraneSynth({
+              pitchDecay: 0.05,
+              octaves: 4,
+              oscillator: { type: 'sine' },
+              envelope: {
+                attack: 0.001,
+                decay: 0.4,
+                sustain: 0.01,
+                release: 0.4
+              }
+            }).toDestination();
+            break;
+            
+          case 'metal':
+            synth = new Tone.MetalSynth({
+              frequency: 200,
+              envelope: {
+                attack: 0.001,
+                decay: 0.1,
+                release: 0.1
+              },
+              harmonicity: 5.1,
+              modulationIndex: 32,
+              resonance: 4000,
+              octaves: 1.5
+            }).toDestination();
+            break;
+            
+          case 'mono':
+            synth = new Tone.MonoSynth({
+              oscillator: { type: 'sine' },
+              envelope: {
+                attack: 0.05,
+                decay: 0.3,
+                sustain: 0.4,
+                release: 0.8
+              },
+              filterEnvelope: {
+                attack: 0.05,
+                decay: 0.2,
+                sustain: 0.3,
+                release: 0.6,
+                baseFrequency: 150,
+                octaves: 2
+              }
+            }).toDestination();
+            break;
+            
+          case 'poly':
+            synth = new Tone.PolySynth(Tone.Synth, {
+              oscillator: { type: 'triangle' },
+              envelope: {
+                attack: 0.02,
+                decay: 0.3,
+                sustain: 0.4,
+                release: 0.8
+              }
+            }).toDestination();
+            break;
+        }
+        
+        synth.volume.value = DEFAULT_VOLUME;
+        synths[inst.id] = synth;
+      });
+    }
+
+    // =====================================================
+    // INITIALIZE GRID STATE
+    // =====================================================
+    function initGrid() {
+      // Default pattern similar to design
+      const defaultPattern = [
+        [0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0], // kick
+        [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0], // snare
+        [0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0], // hihat
+        [0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0], // clap
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], // bass
+        [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0], // lead
+        [0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0], // pad
+        [0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0], // perc
+        [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // tom
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]  // cymbal
+      ];
+      
+      INSTRUMENTS.forEach((inst, row) => {
+        grid[inst.id] = defaultPattern[row].map(v => v === 1);
+      });
+    }
+
+    // =====================================================
+    // CREATE PIXEL GRID UI
+    // =====================================================
+    function createPixelGrid() {
+      pixelGrid.innerHTML = '';
+      
+      for (let row = 0; row < INSTRUMENTS.length; row++) {
+        for (let col = 0; col < STEPS; col++) {
+          const pixel = document.createElement('div');
+          pixel.className = 'pixel';
+          pixel.dataset.row = row;
+          pixel.dataset.col = col;
+          pixel.dataset.instrument = INSTRUMENTS[row].id;
+          
+          // Set initial state
+          if (grid[INSTRUMENTS[row].id][col]) {
+            pixel.classList.add('active');
+          }
+          
+          // Click to toggle
+          pixel.addEventListener('click', () => toggleCell(row, col));
+          
+          pixelGrid.appendChild(pixel);
+        }
+      }
+    }
+
+    // =====================================================
+    // TOGGLE CELL
+    // =====================================================
+    function toggleCell(row, col) {
+      const instrumentId = INSTRUMENTS[row].id;
+      grid[instrumentId][col] = !grid[instrumentId][col];
+      
+      // Update visual
+      const pixel = pixelGrid.children[row * STEPS + col];
+      pixel.classList.toggle('active', grid[instrumentId][col]);
+    }
+
+    // =====================================================
+    // UPDATE PLAYHEAD VISUAL
+    // =====================================================
+    function updatePlayhead(step) {
+      // Remove previous playhead
+      document.querySelectorAll('.pixel.current-step').forEach(p => {
+        p.classList.remove('current-step');
+      });
+      
+      // Add playhead to current step column
+      for (let row = 0; row < INSTRUMENTS.length; row++) {
+        const pixel = pixelGrid.children[row * STEPS + step];
+        pixel.classList.add('current-step');
+      }
+    }
+
+    function clearPlayhead() {
+      document.querySelectorAll('.pixel.current-step').forEach(p => {
+        p.classList.remove('current-step');
+      });
+    }
+
+    // =====================================================
+    // CHECK IF GRID HAS ANY ACTIVE CELLS
+    // =====================================================
+    function hasActiveCells() {
+      return Object.values(grid).some(track => track.some(step => step === true));
+    }
+
+    // =====================================================
+    // SEQUENCE / PLAYBACK
+    // =====================================================
+    function createSequence() {
+      if (sequence) {
+        sequence.dispose();
+      }
+      
+      sequence = new Tone.Sequence(
+        (time, step) => {
+          currentStep = step;
+          
+          // Update playhead visual (schedule slightly ahead for visual sync)
+          Tone.Draw.schedule(() => {
+            updatePlayhead(step);
+          }, time);
+          
+          // Trigger active instruments
+          INSTRUMENTS.forEach(inst => {
+            if (grid[inst.id][step]) {
+              const synth = synths[inst.id];
+              if (inst.type === 'metal') {
+                synth.triggerAttackRelease('16n', time);
+              } else {
+                synth.triggerAttackRelease(inst.note, '16n', time);
+              }
+            }
+          });
+        },
+        [...Array(STEPS).keys()], // [0, 1, 2, ... 15]
+        '16n'
+      );
+      
+      sequence.loop = true;
+    }
+
+    async function startPlayback() {
+      if (!hasActiveCells()) {
+        alert('Add some beats to the grid first!');
+        return false;
+      }
+      
+      try {
+        await Tone.start();
+        createSequence();
+        Tone.Transport.bpm.value = bpm;
+        sequence.start(0);
+        Tone.Transport.start();
+        isPlaying = true;
+        updatePlayButton();
+        return true;
+      } catch (error) {
+        console.error('Error starting playback:', error);
+        return false;
+      }
+    }
+
+    function pausePlayback() {
+      Tone.Transport.pause();
+      isPlaying = false;
+      updatePlayButton();
+    }
+
+    function stopPlayback() {
+      Tone.Transport.stop();
+      if (sequence) {
+        sequence.stop();
+      }
+      isPlaying = false;
+      currentStep = 0;
+      clearPlayhead();
+      updatePlayButton();
+    }
+
+    function updatePlayButton() {
+      if (isPlaying) {
+        // Show pause icon
+        playIcon.innerHTML = `
+          <rect x="3" y="2" width="4" height="12" fill="#222"/>
+          <rect x="9" y="2" width="4" height="12" fill="#222"/>
+        `;
+        playBtn.classList.add('playing');
+      } else {
+        // Show play icon
+        playIcon.innerHTML = `
+          <path d="M4 2L14 8L4 14V2Z" fill="#222" stroke="#222" stroke-width="1.5" stroke-linejoin="round"/>
+        `;
+        playBtn.classList.remove('playing');
+      }
+    }
+
+    // =====================================================
+    // TEMPO CONTROL
+    // =====================================================
+    function updateTempo(newBpm) {
+      bpm = Math.max(MIN_BPM, Math.min(MAX_BPM, newBpm));
+      Tone.Transport.bpm.value = bpm;
+      tempoLabel.textContent = `${Math.round(bpm)} BPM`;
+      updateTempoKnobPosition();
+    }
+
+    function updateTempoKnobPosition() {
+      // Map BPM to knob position (0 = top = fast, 56 = bottom = slow)
+      const range = MAX_BPM - MIN_BPM;
+      const normalized = (bpm - MIN_BPM) / range;
+      const knobTop = (1 - normalized) * 56; // Invert so up = faster
+      tempoKnob.style.top = knobTop + 'px';
+    }
+
+    function initTempoControl() {
+      let isDragging = false;
+      const tempoControl = document.querySelector('.tempo-control');
+      
+      updateTempoKnobPosition();
+      
+      tempoKnob.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        e.preventDefault();
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        const rect = tempoControl.getBoundingClientRect();
+        let y = e.clientY - rect.top;
+        y = Math.max(0, Math.min(56, y));
+        
+        // Map position to BPM (inverted: top = fast)
+        const normalized = 1 - (y / 56);
+        const newBpm = MIN_BPM + normalized * (MAX_BPM - MIN_BPM);
+        updateTempo(newBpm);
+      });
+      
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+      
+      // Touch support
+      tempoKnob.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        e.preventDefault();
+      });
+      
+      document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        
+        const rect = tempoControl.getBoundingClientRect();
+        let y = e.touches[0].clientY - rect.top;
+        y = Math.max(0, Math.min(56, y));
+        
+        const normalized = 1 - (y / 56);
+        const newBpm = MIN_BPM + normalized * (MAX_BPM - MIN_BPM);
+        updateTempo(newBpm);
+      });
+      
+      document.addEventListener('touchend', () => {
+        isDragging = false;
+      });
+    }
+
+    // =====================================================
+    // TIMER FUNCTIONALITY
+    // =====================================================
+    function formatTime(seconds) {
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function updateTimerDisplay() {
+      timerDisplay.textContent = formatTime(remainingSeconds);
+      timerDisplay.classList.toggle('active', remainingSeconds > 0 || isTimerRunning);
+    }
+
+    function startTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      
+      remainingSeconds = selectedMinutes * 60;
+      isTimerRunning = true;
+      updateTimerDisplay();
+      
+      timerInterval = setInterval(() => {
+        if (!isPlaying) return; // Only countdown while playing
+        
+        remainingSeconds--;
+        updateTimerDisplay();
+        
+        if (remainingSeconds <= 0) {
+          // Timer completed
+          clearInterval(timerInterval);
+          timerInterval = null;
+          isTimerRunning = false;
+          stopPlayback();
+          updateTimerDisplay();
+          timeBtns.forEach(b => b.disabled = false);
+          startBtn.textContent = 'START';
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      isTimerRunning = false;
+      remainingSeconds = 0;
+      updateTimerDisplay();
+    }
+
+    // =====================================================
+    // PATTERN TOOLS
+    // =====================================================
+    function randomisePattern() {
+      INSTRUMENTS.forEach(inst => {
+        for (let i = 0; i < STEPS; i++) {
+          // 20-25% probability
+          grid[inst.id][i] = Math.random() < 0.22;
+        }
+      });
+      createPixelGrid();
+    }
+
+    function clearPattern() {
+      INSTRUMENTS.forEach(inst => {
+        grid[inst.id] = new Array(STEPS).fill(false);
+      });
+      createPixelGrid();
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      
+      Object.values(synths).forEach(synth => {
+        synth.volume.value = isMuted ? -Infinity : DEFAULT_VOLUME;
+      });
+      
+      muteBtn.classList.toggle('active', isMuted);
+      muteBtn.textContent = isMuted ? 'UNMUTE' : 'MUTE';
+    }
+
+    // =====================================================
+    // EVENT LISTENERS
+    // =====================================================
+    function initEventListeners() {
+      // Time buttons
+      timeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (isTimerRunning) return;
+          
+          timeBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedMinutes = parseInt(btn.dataset.time);
+        });
+      });
+      
+      // Start button (starts timer + playback)
+      startBtn.addEventListener('click', async () => {
+        if (isTimerRunning) {
+          // Stop everything
+          stopPlayback();
+          stopTimer();
+          timeBtns.forEach(b => b.disabled = false);
+          startBtn.textContent = 'START';
+        } else {
+          // Start playback first
+          const started = await startPlayback();
+          if (started) {
+            startTimer();
+            timeBtns.forEach(b => b.disabled = true);
+            startBtn.textContent = 'STOP';
+          }
+        }
+      });
+      
+      // Play button (just play/pause, no timer)
+      playBtn.addEventListener('click', async () => {
+        if (isPlaying) {
+          pausePlayback();
+        } else {
+          await startPlayback();
+        }
+      });
+      
+      // Footer controls
+      randomiseBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        randomisePattern();
+      });
+      
+      clearBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        clearPattern();
+        if (isPlaying && !hasActiveCells()) {
+          stopPlayback();
+        }
+      });
+      
+      muteBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleMute();
+      });
+    }
+
+    // =====================================================
+    // CLEANUP
+    // =====================================================
+    function cleanup() {
+      if (sequence) {
+        sequence.dispose();
+      }
+      Object.values(synths).forEach(synth => {
+        synth.dispose();
+      });
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+    }
+
+    window.addEventListener('beforeunload', cleanup);
+
+    // =====================================================
+    // INITIALIZE
+    // =====================================================
+    function init() {
+      initSynths();
+      initGrid();
+      createPixelGrid();
+      initTempoControl();
+      initEventListeners();
+      updateTimerDisplay();
+      
+      // Set default time selection
+      timeBtns[1].classList.add('active'); // 30 mins default
+    }
+
+    // Start the app
+    init();
+  </script>
+</body>
+</html>
