@@ -34,7 +34,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 70px 20px 90px 20px;
       gap: 16px;
     }
 
@@ -52,6 +52,7 @@
       justify-content: center;
       align-items: center;
       flex-shrink: 0;
+      margin-top: 30px;
     }
 
     .timer-display.active {
@@ -63,14 +64,17 @@
       position: relative;
       overflow: hidden;
       width: 0.6em;
-      height: 1.15em;
       text-align: center;
       background: transparent;
+      vertical-align: baseline;
+      line-height: 1;
     }
 
     .timer-digit-inner {
-      display: block;
+      display: inline-block;
       will-change: transform, opacity, filter;
+      vertical-align: baseline;
+      line-height: 1;
     }
 
     .timer-digit-inner.changing {
@@ -99,6 +103,8 @@
       display: inline-block;
       width: 0.3em;
       text-align: center;
+      vertical-align: baseline;
+      line-height: 1;
     }
 
     .controls {
@@ -106,6 +112,7 @@
       gap: 16px;
       align-items: center;
       flex-shrink: 0;
+      margin-bottom: 16px;
     }
 
     .time-selector {
@@ -462,6 +469,10 @@
       fill: #000;
     }
 
+    .footer-icon-btn.active {
+      opacity: 1;
+    }
+
     .footer-icon-btn.active svg path {
       fill: #ff6b6b;
     }
@@ -588,9 +599,242 @@
       }
     }
 
+    /* =====================================================
+       SHARE BUTTON - TOP RIGHT CORNER
+       ===================================================== */
+    .share-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 48px;
+      height: 48px;
+      background: #FFF;
+      border: 1px solid #E3E3E3;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.05);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      z-index: 1000;
+    }
+
+    .share-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    /* Responsive - smaller on mobile */
+    @media screen and (max-width: 400px) {
+      .share-btn {
+        width: 40px;
+        height: 40px;
+        top: 12px;
+        right: 12px;
+      }
+
+      .share-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    /* =====================================================
+       SHARE MODAL
+       ===================================================== */
+    .share-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #F5F5F5;
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .share-modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    /* Share Modal Container */
+    .share-modal {
+      position: relative;
+      display: flex;
+      width: 606px;
+      max-width: 90vw;
+      height: auto;
+      max-height: 90vh;
+      padding: 64px 50px 48px 50px;
+      justify-content: flex-start;
+      align-items: flex-start;
+      flex-direction: column;
+      border-radius: 40px;
+      border: 1px solid #E3E3E3;
+      background: #FFF;
+      box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.05);
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      overflow: hidden;
+    }
+
+    .share-modal-overlay.active .share-modal {
+      transform: scale(1);
+    }
+
+    /* Close Button */
+    .close-modal-btn {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      background: #FFF;
+      border: 1px solid #E3E3E3;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    /* Modal Content */
+    .share-modal-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0;
+      width: 100%;
+      padding-bottom: 32px;
+    }
+
+    .share-modal-title {
+      font-family: 'Geist', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: #222;
+      text-align: left;
+      margin-top: 150px;
+      margin-bottom: 0;
+      width: 100%;
+      line-height: 24px;
+      letter-spacing: -0.032px;
+    }
+
+    .about-text {
+      width: 100%;
+      text-align: left;
+    }
+
+    .about-text p {
+      font-family: 'Geist', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 24px;
+      color: rgba(34, 34, 34, 0.50);
+      margin: 0 0 12px 0;
+      letter-spacing: -0.028px;
+    }
+
+    .about-text p:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-image {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    .modal-image img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .credits {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-top: 64px;
+    }
+
+    .built-by {
+      font-family: 'Geist', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 24px;
+      letter-spacing: -0.028px;
+      color: rgba(34, 34, 34, 0.50);
+    }
+
+    .built-by a {
+      color: #222;
+      text-decoration: none;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .social-links a {
+      font-family: 'Geist', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 24px;
+      letter-spacing: -0.028px;
+      color: #222;
+      text-decoration: none;
+    }
+
+    /* Responsive Modal */
+    @media screen and (max-width: 768px) {
+      .share-modal {
+        width: 90vw;
+        padding: 24px;
+      }
+
+      .share-modal-title {
+        font-size: 20px;
+      }
+
+      .share-options {
+        max-width: 100%;
+      }
+    }
+
+    @media screen and (max-width: 400px) {
+      .share-modal {
+        border-radius: 24px;
+        padding: 20px;
+      }
+
+      .share-option-btn {
+        padding: 12px 16px;
+        font-size: 13px;
+      }
+    }
+
   </style>
 </head>
 <body>
+  <!-- Share Button -->
+  <button id="shareBtn" class="share-btn">
+    <img src="Info.png" alt="Info" width="24" height="24">
+  </button>
+
   <div class="timer-display" id="timer">00:00:00</div>
   
   <div class="controls">
@@ -598,13 +842,13 @@
     <div class="time-selector" id="timeSelector">
       <button class="arrow-btn" id="decreaseTime">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M7.5 2.5L4 6L7.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 6H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </button>
       <span class="time-value" id="timeValue">15 mins</span>
       <button class="arrow-btn" id="increaseTime">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6 2V10M2 6H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </button>
     </div>
@@ -1254,6 +1498,7 @@
     let currentStep = 0;
     let isMuted = false;
     let bpm = DEFAULT_BPM;
+    let synthsInitialized = false; // Track if synths have been initialized
 
     // Timer state
     let timerInterval = null;
@@ -1347,34 +1592,146 @@
       }
     }).toDestination();
     alarmSynth.volume.value = -5; // Louder for alarm
-    
-    // Play subtle click sound
-    async function playClickSound() {
+
+    // Mechanical keyboard click sound for device play button
+    const mechClickFilter = new Tone.Filter({
+      frequency: 2500,
+      type: 'highpass',
+      rolloff: -12
+    }).connect(new Tone.Filter({
+      frequency: 8000,
+      type: 'lowpass',
+      rolloff: -24
+    })).toDestination();
+
+    const mechClickSynth = new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: {
+        attack: 0.001,
+        decay: 0.015,
+        sustain: 0,
+        release: 0.01
+      }
+    }).connect(mechClickFilter);
+    mechClickSynth.volume.value = -12;
+
+    // Mechanical key release sound (subtle)
+    const mechReleaseSynth = new Tone.NoiseSynth({
+      noise: { type: 'brown' },
+      envelope: {
+        attack: 0.002,
+        decay: 0.01,
+        sustain: 0,
+        release: 0.008
+      }
+    }).connect(mechClickFilter);
+    mechReleaseSynth.volume.value = -20;
+
+    // Subtle shaker click sound
+    function playClickSound() {
       if (isMuted) return;
-      if (Tone.context.state !== 'running') {
-        await Tone.start();
+
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Create noise buffer
+      const bufferSize = ctx.sampleRate * 0.15;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * 0.25;
       }
-      clickSynth.triggerAttackRelease('32n');
-    }
-    
-    // Play alarm sound (tring tring pattern)
-    async function playAlarmSound() {
-      if (Tone.context.state !== 'running') {
-        await Tone.start();
-      }
-      // Play a pleasant bell pattern - tring tring
-      const now = Tone.now();
-      alarmSynth.triggerAttackRelease('E5', '8n', now);
-      alarmSynth.triggerAttackRelease('G5', '8n', now + 0.15);
-      alarmSynth.triggerAttackRelease('E5', '8n', now + 0.6);
-      alarmSynth.triggerAttackRelease('G5', '8n', now + 0.75);
-      alarmSynth.triggerAttackRelease('C6', '4n', now + 1.2);
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      // Filters for smooth, warm sound
+      const lowpass = ctx.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.value = 1800;
+      lowpass.Q.value = 0.2;
+
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.value = 1000;
+      bandpass.Q.value = 0.4;
+
+      const lowpass2 = ctx.createBiquadFilter();
+      lowpass2.type = 'lowpass';
+      lowpass2.frequency.value = 2000;
+      lowpass2.Q.value = 0.2;
+
+      // Gentle envelope
+      const gainNode = ctx.createGain();
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.045, ctx.currentTime + 0.035);
+      gainNode.gain.linearRampToValueAtTime(0.03, ctx.currentTime + 0.06);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+
+      // Connect
+      noise.connect(lowpass);
+      lowpass.connect(bandpass);
+      bandpass.connect(lowpass2);
+      lowpass2.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      noise.start(ctx.currentTime);
+      noise.stop(ctx.currentTime + 0.15);
     }
 
-    function initSynths() {
+    // Play alarm sound (tring tring pattern)
+    async function playAlarmSound() {
+      try {
+        if (Tone.context.state !== 'running') {
+          await Tone.start();
+        }
+        // Play a pleasant bell pattern - tring tring
+        const now = Tone.now();
+        alarmSynth.triggerAttackRelease('E5', '8n', now);
+        alarmSynth.triggerAttackRelease('G5', '8n', now + 0.15);
+        alarmSynth.triggerAttackRelease('E5', '8n', now + 0.6);
+        alarmSynth.triggerAttackRelease('G5', '8n', now + 0.75);
+        alarmSynth.triggerAttackRelease('C6', '4n', now + 1.2);
+      } catch (e) {
+        console.log('Alarm sound error:', e);
+      }
+    }
+
+    // Play mechanical keyboard click sound
+    async function playMechClick() {
+      if (isMuted) return;
+      try {
+        if (Tone.context.state !== 'running') {
+          await Tone.start();
+        }
+        const now = Tone.now();
+        // Play click (key press)
+        mechClickSynth.triggerAttackRelease('32n', now);
+        // Play subtle release sound slightly after
+        mechReleaseSynth.triggerAttackRelease('64n', now + 0.02);
+      } catch (e) {
+        console.log('Mechanical click sound error:', e);
+      }
+    }
+
+    async function initSynths() {
+      // Only initialize once
+      if (synthsInitialized) return;
+
+      // Start Tone.js audio context with user interaction
+      try {
+        await Tone.start();
+        console.log('Audio context started successfully');
+      } catch (error) {
+        console.error('Error starting audio context:', error);
+        throw error;
+      }
+
+      console.log('Creating synths...');
+
       INSTRUMENTS.forEach(inst => {
         let synth;
-        
+
         switch (inst.type) {
           case 'softpad':
             // Warm, evolving pad with slow attack
@@ -1546,9 +1903,18 @@
         synth.volume.value = DEFAULT_VOLUME;
         synths[inst.id] = synth;
       });
-      
-      // Initialize reverb
-      reverb.generate();
+
+      // Initialize reverb - wait for impulse response to be ready
+      try {
+        await reverb.ready;
+        console.log('Reverb impulse response ready');
+      } catch (error) {
+        console.error('Error initializing reverb:', error);
+        throw error;
+      }
+
+      synthsInitialized = true;
+      console.log('All synths initialized successfully');
     }
 
     // =====================================================
@@ -1693,16 +2059,26 @@
     // PLAY PREVIEW SOUND
     // =====================================================
     async function playPreviewSound(row) {
+      // Initialize synths on first interaction if not already done
+      if (!synthsInitialized) {
+        try {
+          await initSynths();
+        } catch (e) {
+          console.error('Failed to initialize synths:', e);
+          return;
+        }
+      }
+
       const inst = INSTRUMENTS[row];
       const synth = synths[inst.id];
-      
+
       if (!synth) return;
-      
+
       // Ensure audio context is started (required for browsers)
       if (Tone.context.state !== 'running') {
         await Tone.start();
       }
-      
+
       try {
         // Play a short preview note (longer for mellow sounds)
         const duration = '4n'; // Quarter note for smoother preview
@@ -1798,7 +2174,18 @@
         alert('Add some beats to the grid first!');
         return false;
       }
-      
+
+      // Initialize synths on first playback if not already done
+      if (!synthsInitialized) {
+        try {
+          await initSynths();
+        } catch (error) {
+          console.error('Failed to initialize audio:', error);
+          alert('Failed to start audio. Please try again.');
+          return false;
+        }
+      }
+
       try {
         await Tone.start();
         createSequence();
@@ -1869,49 +2256,49 @@
     function initTempoControl() {
       let isDragging = false;
       const tempoControl = document.querySelector('.tempo-control');
-      
+
       updateTempoKnobPosition();
-      
+
       tempoKnob.addEventListener('mousedown', (e) => {
         isDragging = true;
         e.preventDefault();
       });
-      
+
       document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-        
+
         const rect = tempoControl.getBoundingClientRect();
         let y = e.clientY - rect.top;
         y = Math.max(0, Math.min(56, y));
-        
+
         // Map position to BPM (inverted: top = fast)
         const normalized = 1 - (y / 56);
         const newBpm = MIN_BPM + normalized * (MAX_BPM - MIN_BPM);
         updateTempo(newBpm);
       });
-      
+
       document.addEventListener('mouseup', () => {
         isDragging = false;
       });
-      
+
       // Touch support
       tempoKnob.addEventListener('touchstart', (e) => {
         isDragging = true;
         e.preventDefault();
       });
-      
+
       document.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-        
+
         const rect = tempoControl.getBoundingClientRect();
         let y = e.touches[0].clientY - rect.top;
         y = Math.max(0, Math.min(56, y));
-        
+
         const normalized = 1 - (y / 56);
         const newBpm = MIN_BPM + normalized * (MAX_BPM - MIN_BPM);
         updateTempo(newBpm);
       });
-      
+
       document.addEventListener('touchend', () => {
         isDragging = false;
       });
@@ -1995,44 +2382,57 @@
     // PRESET PATTERNS - Cute Pixel Art
     // =====================================================
     const PRESET_PATTERNS = [
-      // Pattern 1 - Heart ❤️
+      // Pattern 1 - Smiley Face 😊
       [
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // row 0 (empty)
-        [0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0], // row 1
-        [0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,0], // row 2
-        [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0], // row 3
-        [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0], // row 4
-        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0], // row 5
-        [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0], // row 6
-        [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0], // row 7
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // row 8
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]  // row 9
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // Row 1
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // Row 2
+        [0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0], // Row 3 - Eyes
+        [0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0], // Row 4 - Eyes
+        [0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0], // Row 5 - Eyes
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // Row 6
+        [0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0], // Row 7 - Smile ends
+        [0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0], // Row 8 - Smile curve
+        [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0], // Row 9 - Smile bottom
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]  // Row 10
       ],
-      // Pattern 2 - Smiley Face 😊
+      // Pattern 2 - Diagonal Arrows ↘↙
       [
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // row 0 (empty)
-        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0], // top of head
-        [0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0], // sides
-        [0,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0], // eyes
-        [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0], // middle
-        [0,0,0,1,0,1,0,0,0,0,1,0,1,0,0,0], // mouth corners
-        [0,0,0,1,0,0,1,1,1,1,0,0,1,0,0,0], // smile
-        [0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0], // sides
-        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0], // bottom
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]  // row 9 (empty)
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],  // Row 1
+        [0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],  // Row 2 - Left arrow top
+        [0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],  // Row 3
+        [0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0],  // Row 4 - Left arrow going down
+        [0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0],  // Row 5
+        [0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,0],  // Row 6 - Crossing point
+        [0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0],  // Row 7
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],  // Row 8 - Right arrow going down
+        [0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0],  // Row 9
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]   // Row 10 - Right arrow bottom
       ],
-      // Pattern 3 - Music Note 🎵
+      // Pattern 3 - Heart ❤️
       [
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // row 0 (empty)
-        [0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0], // note head top
-        [0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0], // 
-        [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0], // stem
-        [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0], // stem
-        [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0], // stem
-        [0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0], // bottom note
-        [0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0], // 
-        [0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0], // bottom curve
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]  // row 9 (empty)
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],// row 0 (empty)
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // row 1
+        [0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0], // row 2   
+        [0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,0], // row 3
+        [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0], // row 4
+        [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0], // row 5
+        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0], // row 6
+        [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0], // row 7
+        [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0], // row 8
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // row 9
+      ],
+      // Pattern 4 - Wave 🌊
+      [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],  // Row 1
+        [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],  // Row 2 - Wave peak start
+        [0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0],  // Row 3
+        [0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0],  // Row 4
+        [1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0],  // Row 5 - Rising
+        [0,1,0,1,0,0,0,0,0,0,0,1,0,0,0,0],  // Row 6 - Center/crossing
+        [0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0],  // Row 7 - Falling
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],  // Row 8
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],  // Row 9 - Wave trough
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]   // Row 10
       ]
     ];
 
@@ -2164,7 +2564,6 @@
 
       // Pause button
       pauseBtn.addEventListener('click', () => {
-        playClickSound();
         if (isPlaying) {
           pausePlayback();
           pauseBtn.textContent = 'Resume';
@@ -2176,16 +2575,15 @@
 
       // Restart button
       restartBtn.addEventListener('click', () => {
-        playClickSound();
         stopPlayback();
         stopTimer();
         showTimerStoppedControls();
         pauseBtn.textContent = 'Pause';
       });
       
-      // Play button (just play/pause, no timer)
+      // Play button (just play/pause, no timer) - with mechanical keyboard click
       playBtn.addEventListener('click', async () => {
-        playClickSound();
+        playMechClick(); // Mechanical keyboard click sound
         if (isPlaying) {
           pausePlayback();
         } else {
@@ -2217,6 +2615,79 @@
     }
 
     // =====================================================
+    // SHARE MODAL FUNCTIONALITY
+    // =====================================================
+    function initShareModal() {
+      const shareBtn = document.getElementById('shareBtn');
+      const shareModal = document.getElementById('shareModal');
+      const closeModalBtn = document.getElementById('closeModal');
+
+      console.log('Initializing share modal...');
+      console.log('Share button:', shareBtn);
+      console.log('Modal:', shareModal);
+      console.log('Close button:', closeModalBtn);
+
+      if (!shareBtn || !shareModal) {
+        console.error('Share button or modal not found!');
+        return;
+      }
+
+      // Open modal
+      shareBtn.addEventListener('click', () => {
+        console.log('Share button clicked - opening modal');
+        playClickSound();
+        shareModal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scroll
+      });
+
+      // Close modal - close button
+      if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', (e) => {
+          console.log('Close button clicked');
+          e.stopPropagation();
+          playClickSound();
+          closeModal();
+        });
+      }
+
+      // Close modal - click outside
+      shareModal.addEventListener('click', (e) => {
+        // Don't close if clicking on a link
+        if (e.target.tagName === 'A' || e.target.closest('a')) {
+          return;
+        }
+        if (e.target === shareModal) {
+          console.log('Clicked outside modal - closing');
+          closeModal();
+        }
+      });
+
+      // Close modal - escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && shareModal.classList.contains('active')) {
+          console.log('ESC pressed - closing modal');
+          closeModal();
+        }
+      });
+
+      function closeModal() {
+        console.log('Closing modal...');
+        shareModal.classList.remove('active');
+        document.body.style.overflow = ''; // Restore scroll
+        console.log('Modal closed, active class removed');
+      }
+
+      // Make sure links work in modal
+      const modalLinks = shareModal.querySelectorAll('a');
+      modalLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.stopPropagation();
+          console.log('Link clicked:', link.href);
+        });
+      });
+    }
+
+    // =====================================================
     // CLEANUP
     // =====================================================
     function cleanup() {
@@ -2237,18 +2708,59 @@
     // INITIALIZE
     // =====================================================
     function init() {
-      initSynths();
+      // Don't initialize synths here - wait for user interaction
+      // This ensures audio context starts properly in all browsers
       initGrid();
       createPixelGrid();
       setupDragInteraction(); // Setup once, works even after clear/randomize
       initTempoControl();
       initEventListeners();
+      initShareModal(); // Initialize share modal functionality
       updateTimerDisplay();
       updateTimeDisplay(); // Initialize time selector display
     }
 
-    // Start the app
-    init();
+    // Start the app when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   </script>
+
+  <!-- Share Modal -->
+  <div id="shareModal" class="share-modal-overlay">
+    <div class="share-modal">
+      <button id="closeModal" class="close-modal-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <div class="share-modal-content">
+        <h2 class="share-modal-title">tl;dr</h2>
+
+        <div class="about-text">
+          <p>They say music without lyrics helps you focus so I made this tiny focus music maker. You can draw over pixels to create gentle loops that play while your timer runs. Click around, make something you vibe with, or hit randomize to explore what I've made for you.</p>
+        </div>
+
+        <div class="modal-image">
+          <img src="imagefooter.png?v=2" alt="Focus illustration">
+        </div>
+
+        <div class="about-text">
+          <p>I'm a product designer who builds fun software because I love making technology feel humane. If you like this or have feedback, please reach out!</p>
+        </div>
+
+        <div class="credits">
+          <span class="built-by">Built by <a href="https://shivanimatlapudi.com" target="_blank" rel="noopener">Shivani Matlapudi</a></span>
+          <div class="social-links">
+            <a href="https://x.com/shivanimatla" target="_blank" rel="noopener">Twitter</a>
+            <a href="mailto:shivanimatlapudi.work@gmail.com">Email</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
