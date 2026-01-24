@@ -2828,19 +2828,22 @@
       // Footer controls
       randomiseBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        playClickSound();
         randomisePattern();
       });
 
       clearBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        playClickSound();
         clearPattern();
         if (isPlaying && !hasActiveCells()) {
           stopPlayback();
         }
       });
-      
+
       muteBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        playClickSound();
         toggleMute();
       });
     }
@@ -2859,6 +2862,7 @@
 
       // Toggle modal on button click
       shareBtn.addEventListener('click', () => {
+        playClickSound();
         if (shareModal.classList.contains('active')) {
           closeModal();
         } else {
