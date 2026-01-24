@@ -563,8 +563,6 @@
     @media screen and (max-width: 480px) {
       body {
         padding-top: 60px;
-        padding-left: 24px;
-        padding-right: 24px;
         padding-bottom: 20px;
       }
 
@@ -604,7 +602,7 @@
       }
 
       .device-wrapper {
-        --device-scale: 0.65;
+        --device-scale: 0.72;
       }
 
       .footer-controls {
@@ -617,7 +615,7 @@
        ===================================================== */
     @media screen and (max-width: 360px) {
       .device-wrapper {
-        --device-scale: 0.35;
+        --device-scale: 0.62;
       }
 
       .timer-display {
@@ -662,9 +660,8 @@
 
     /* =====================================================
        HEIGHT-BASED BREAKPOINTS (for landscape/short screens)
-       Only apply to wider screens to avoid overriding mobile width scales
        ===================================================== */
-    @media screen and (max-height: 700px) and (min-width: 481px) {
+    @media screen and (max-height: 700px) {
       body {
         padding-top: 50px;
         gap: 6px;
@@ -680,7 +677,7 @@
       }
     }
 
-    @media screen and (max-height: 600px) and (min-width: 481px) {
+    @media screen and (max-height: 600px) {
       body {
         padding-top: 45px;
         gap: 4px;
@@ -702,13 +699,22 @@
       }
     }
 
-    @media screen and (max-height: 500px) and (min-width: 481px) {
+    @media screen and (max-height: 500px) {
       .device-wrapper {
         --device-scale: min(var(--device-scale), 0.48);
       }
 
       .timer-display {
         font-size: 22px;
+      }
+    }
+
+    /* =====================================================
+       COMBINED: Very small screens (width AND height)
+       ===================================================== */
+    @media screen and (max-width: 360px) and (max-height: 600px) {
+      .device-wrapper {
+        --device-scale: 0.5;
       }
     }
 
@@ -843,7 +849,7 @@
       font-size: 16px;
       font-weight: 600;
       color: #222;
-      text-align: left;
+      text-align: left;th
       margin-top: clamp(40px, 12vh, 150px);
       margin-bottom: 0;
       width: 100%;
@@ -875,7 +881,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: clamp(12px, 2vh, 20px) 0;
+      margin: clamp(12px, 2vh, 32px) 0;
     }
 
     .modal-image img {
@@ -1859,20 +1865,56 @@
     }).connect(mechClickFilter);
     mechReleaseSynth.volume.value = -20;
 
-    // Subtle shaker click sound - uses Tone.js clickSynth to avoid multiple AudioContexts on mobile
+    // Subtle shaker click sound
     function playClickSound() {
       if (isMuted) return;
 
-      try {
-        // Resume Tone.js context if needed (mobile requires user interaction)
-        if (Tone.context.state === 'suspended') {
-          Tone.context.resume();
-        }
-        // Use the existing Tone.js clickSynth
-        clickSynth.triggerAttackRelease('32n');
-      } catch (e) {
-        console.log('Click sound error:', e);
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Create noise buffer
+      const bufferSize = ctx.sampleRate * 0.15;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * 0.25;
       }
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      // Filters for smooth, warm sound
+      const lowpass = ctx.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.value = 1800;
+      lowpass.Q.value = 0.2;
+
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.value = 1000;
+      bandpass.Q.value = 0.4;
+
+      const lowpass2 = ctx.createBiquadFilter();
+      lowpass2.type = 'lowpass';
+      lowpass2.frequency.value = 2000;
+      lowpass2.Q.value = 0.2;
+
+      // Gentle envelope
+      const gainNode = ctx.createGain();
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.045, ctx.currentTime + 0.035);
+      gainNode.gain.linearRampToValueAtTime(0.03, ctx.currentTime + 0.06);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+
+      // Connect
+      noise.connect(lowpass);
+      lowpass.connect(bandpass);
+      bandpass.connect(lowpass2);
+      lowpass2.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      noise.start(ctx.currentTime);
+      noise.stop(ctx.currentTime + 0.15);
     }
 
     // Play alarm sound (tring tring pattern)
@@ -2383,14 +2425,7 @@
       }
 
       try {
-        // Ensure Tone.js context is started (required on mobile)
-        if (Tone.context.state !== 'running') {
-          await Tone.start();
-        }
-        // Resume if suspended
-        if (Tone.context.state === 'suspended') {
-          await Tone.context.resume();
-        }
+        await Tone.start();
         createSequence();
         Tone.Transport.bpm.value = bpm;
         sequence.start(0);
@@ -2405,24 +2440,15 @@
     }
 
     function pausePlayback() {
-      try {
-        Tone.Transport.pause();
-      } catch (e) {
-        console.log('Pause error, attempting stop:', e);
-        Tone.Transport.stop();
-      }
+      Tone.Transport.pause();
       isPlaying = false;
       updatePlayButton();
     }
 
     function stopPlayback() {
-      try {
-        Tone.Transport.stop();
-        if (sequence) {
-          sequence.stop();
-        }
-      } catch (e) {
-        console.log('Stop error:', e);
+      Tone.Transport.stop();
+      if (sequence) {
+        sequence.stop();
       }
       isPlaying = false;
       currentStep = 0;
@@ -2836,7 +2862,6 @@
 
       // Toggle modal on button click
       shareBtn.addEventListener('click', () => {
-        playClickSound();
         if (shareModal.classList.contains('active')) {
           closeModal();
         } else {
