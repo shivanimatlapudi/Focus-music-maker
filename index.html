@@ -631,7 +631,21 @@
       cursor: pointer;
       box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.05);
       transition: transform 0.1s ease, box-shadow 0.1s ease;
-      z-index: 1000;
+      z-index: 2100;
+    }
+
+    .share-btn-icon {
+      transition: transform 200ms ease-out;
+    }
+
+    .share-btn.active .share-btn-icon {
+      transform: rotate(45deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .share-btn-icon {
+        transition: none;
+      }
     }
 
     .share-btn:active {
@@ -712,23 +726,6 @@
       opacity: 0;
       transform: translateY(10px) scale(0.98);
       transition: opacity 180ms ease-out, transform 180ms ease-out;
-    }
-
-    /* Close Button */
-    .close-modal-btn {
-      position: absolute;
-      top: 24px;
-      right: 24px;
-      width: 44px;
-      height: 44px;
-      background: #FFF;
-      border: 1px solid #E3E3E3;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.05);
     }
 
     /* Modal Content */
@@ -894,8 +891,10 @@
 </head>
 <body>
   <!-- Share Button -->
-  <button id="shareBtn" class="share-btn" aria-label="About this app">
-    <img src="Info.png" alt="" width="24" height="24">
+  <button id="shareBtn" class="share-btn" aria-label="Open info">
+    <svg class="share-btn-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 5V19M5 12H19" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+    </svg>
   </button>
 
   <div class="timer-display" id="timer">00:00:00</div>
@@ -2594,19 +2593,16 @@
     function initEventListeners() {
       // Decrease time button (left arrow)
       decreaseTimeBtn.addEventListener('click', () => {
-        playClickSound();
         changeTime(-1);
       });
 
       // Increase time button (right arrow)
       increaseTimeBtn.addEventListener('click', () => {
-        playClickSound();
         changeTime(1);
       });
 
       // Click on time value to increment
       timeValue.addEventListener('click', () => {
-        playClickSound();
         hasInteractedWithTime = true;
         const currentIndex = TIME_OPTIONS.indexOf(selectedMinutes);
         // Cycle through: if at max, go back to first
@@ -2617,7 +2613,6 @@
       
       // Start button (starts timer + playback)
       startBtn.addEventListener('click', async () => {
-        playClickSound();
         const started = await startPlayback();
         if (started) {
           startTimer();
@@ -2657,13 +2652,11 @@
       // Footer controls
       randomiseBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        playClickSound();
         randomisePattern();
       });
-      
+
       clearBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        playClickSound();
         clearPattern();
         if (isPlaying && !hasActiveCells()) {
           stopPlayback();
@@ -2672,7 +2665,6 @@
       
       muteBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        playClickSound();
         toggleMute();
       });
     }
@@ -2683,44 +2675,28 @@
     function initShareModal() {
       const shareBtn = document.getElementById('shareBtn');
       const shareModal = document.getElementById('shareModal');
-      const closeModalBtn = document.getElementById('closeModal');
-
-      console.log('Initializing share modal...');
-      console.log('Share button:', shareBtn);
-      console.log('Modal:', shareModal);
-      console.log('Close button:', closeModalBtn);
 
       if (!shareBtn || !shareModal) {
         console.error('Share button or modal not found!');
         return;
       }
 
-      // Open modal
+      // Toggle modal on button click
       shareBtn.addEventListener('click', () => {
-        console.log('Share button clicked - opening modal');
-        playClickSound();
-        shareModal.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Prevent background scroll
+        if (shareModal.classList.contains('active')) {
+          closeModal();
+        } else {
+          openModal();
+        }
       });
 
-      // Close modal - close button
-      if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', (e) => {
-          console.log('Close button clicked');
-          e.stopPropagation();
-          playClickSound();
-          closeModal();
-        });
-      }
-
-      // Close modal - click outside
+      // Close modal - click outside (on overlay)
       shareModal.addEventListener('click', (e) => {
         // Don't close if clicking on a link
         if (e.target.tagName === 'A' || e.target.closest('a')) {
           return;
         }
         if (e.target === shareModal) {
-          console.log('Clicked outside modal - closing');
           closeModal();
         }
       });
@@ -2728,21 +2704,27 @@
       // Close modal - escape key
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && shareModal.classList.contains('active')) {
-          console.log('ESC pressed - closing modal');
           closeModal();
         }
       });
 
+      function openModal() {
+        shareModal.classList.add('active');
+        shareBtn.classList.add('active');
+        shareBtn.setAttribute('aria-label', 'Close info');
+        document.body.style.overflow = 'hidden';
+      }
+
       function closeModal() {
-        console.log('Closing modal...');
         shareModal.classList.add('closing');
         shareModal.classList.remove('active');
+        shareBtn.classList.remove('active');
+        shareBtn.setAttribute('aria-label', 'Open info');
 
         // Wait for animation to complete before hiding
         setTimeout(() => {
           shareModal.classList.remove('closing');
-          document.body.style.overflow = ''; // Restore scroll
-          console.log('Modal closed');
+          document.body.style.overflow = '';
         }, 300);
       }
 
@@ -2751,7 +2733,6 @@
       modalLinks.forEach(link => {
         link.addEventListener('click', (e) => {
           e.stopPropagation();
-          console.log('Link clicked:', link.href);
         });
       });
     }
@@ -2800,12 +2781,6 @@
   <!-- Share Modal -->
   <div id="shareModal" class="share-modal-overlay">
     <div class="share-modal">
-      <button id="closeModal" class="close-modal-btn" aria-label="Close modal">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M18 6L6 18M6 6L18 18" stroke="#222" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-
       <div class="share-modal-content">
         <h2 class="share-modal-title">tl;dr</h2>
 
