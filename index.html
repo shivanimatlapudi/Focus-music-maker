@@ -1803,6 +1803,23 @@
       }
     }).connect(clickFilter);
     clickSynth.volume.value = -18;
+
+    // Subtle shaker synth for UI buttons (softer than mechanical click)
+    const shakerFilter = new Tone.Filter({
+      frequency: 1500,
+      type: 'lowpass',
+      Q: 0.5
+    }).toDestination();
+    const shakerSynth = new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: {
+        attack: 0.005,
+        decay: 0.08,
+        sustain: 0,
+        release: 0.05
+      }
+    }).connect(shakerFilter);
+    shakerSynth.volume.value = -22;
     
     // Alarm sound for timer completion (tring tring bell)
     const alarmSynth = new Tone.FMSynth({
@@ -1859,7 +1876,7 @@
     }).connect(mechClickFilter);
     mechReleaseSynth.volume.value = -20;
 
-    // Subtle shaker click sound - uses Tone.js clickSynth to avoid multiple AudioContexts on mobile
+    // Subtle shaker click sound - uses Tone.js shakerSynth for soft UI feedback
     function playClickSound() {
       if (isMuted) return;
 
@@ -1868,8 +1885,8 @@
         if (Tone.context.state === 'suspended') {
           Tone.context.resume();
         }
-        // Use the existing Tone.js clickSynth
-        clickSynth.triggerAttackRelease('32n');
+        // Use the softer shaker synth for UI buttons
+        shakerSynth.triggerAttackRelease('16n');
       } catch (e) {
         console.log('Click sound error:', e);
       }
