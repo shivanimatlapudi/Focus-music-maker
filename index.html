@@ -2851,7 +2851,23 @@
           await startPlayback();
         }
       });
-      
+
+      // Spacebar to play/pause
+      document.addEventListener('keydown', async (e) => {
+        // Only trigger if not typing in an input field and modal is not open
+        if (e.code === 'Space' &&
+            !e.target.closest('input, textarea') &&
+            !document.getElementById('shareModal').classList.contains('active')) {
+          e.preventDefault(); // Prevent page scroll
+          playMechClick();
+          if (isPlaying) {
+            pausePlayback();
+          } else {
+            await startPlayback();
+          }
+        }
+      });
+
       // Footer controls
       randomiseBtn.addEventListener('click', (e) => {
         e.preventDefault();
