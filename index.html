@@ -570,22 +570,33 @@
       }
 
       .controls {
-        gap: 8px;
+        gap: 6px;
       }
 
       .time-selector {
-        height: 44px;
-        padding: 6px 12px;
+        height: 40px;
+        padding: 4px 8px;
+        gap: 4px;
+      }
+
+      .arrow-btn {
+        padding: 10px;
+        min-width: 36px;
+        min-height: 36px;
       }
 
       .time-value {
-        font-size: 13px;
+        font-size: 12px;
       }
 
       .start-btn, .pause-btn, .restart-btn {
-        height: 44px;
-        padding: 8px 16px;
-        font-size: 13px;
+        height: 40px;
+        padding: 6px 14px;
+        font-size: 12px;
+      }
+
+      .timer-controls {
+        gap: 8px;
       }
 
       .device-wrapper {
@@ -610,12 +621,38 @@
       }
 
       .controls {
-        flex-direction: column;
-        gap: 8px;
+        gap: 5px;
+      }
+
+      .time-selector {
+        height: 38px;
+        padding: 4px 6px;
+        gap: 2px;
+      }
+
+      .arrow-btn {
+        padding: 8px;
+        min-width: 32px;
+        min-height: 32px;
+      }
+
+      .arrow-btn svg {
+        width: 10px;
+        height: 10px;
+      }
+
+      .time-value {
+        font-size: 11px;
+      }
+
+      .start-btn, .pause-btn, .restart-btn {
+        height: 38px;
+        padding: 6px 12px;
+        font-size: 11px;
       }
 
       .timer-controls {
-        gap: 12px;
+        gap: 6px;
       }
     }
 
@@ -891,28 +928,127 @@
     /* Responsive Modal */
     @media screen and (max-width: 768px) {
       .share-modal {
-        width: 90vw;
-        padding: 24px;
+        width: 92vw;
+        max-width: 92vw;
+        padding: 32px 24px 24px 24px;
+        border-radius: 28px;
+        max-height: 85vh;
+        overflow-y: auto;
       }
 
       .share-modal-title {
-        font-size: 20px;
+        font-size: 15px;
+        margin-top: 100px;
       }
 
-      .share-options {
-        max-width: 100%;
+      .about-text p {
+        font-size: 13px;
+        line-height: 20px;
+      }
+
+      .modal-image {
+        margin: 16px 0;
+      }
+
+      .credits {
+        margin-top: 32px;
+        gap: 12px;
+      }
+
+      .built-by,
+      .social-links a {
+        font-size: 13px;
+      }
+
+      .social-links {
+        gap: 16px;
       }
     }
 
-    @media screen and (max-width: 400px) {
+    @media screen and (max-width: 480px) {
       .share-modal {
+        width: 94vw;
+        max-width: 94vw;
+        padding: 24px 20px 20px 20px;
         border-radius: 24px;
-        padding: 20px;
+        max-height: 80vh;
       }
 
-      .share-option-btn {
-        padding: 12px 16px;
-        font-size: 13px;
+      .share-modal-title {
+        font-size: 14px;
+        margin-top: 80px;
+        line-height: 20px;
+      }
+
+      .about-text p {
+        font-size: 12px;
+        line-height: 18px;
+        margin-bottom: 8px;
+      }
+
+      .modal-image {
+        margin: 12px 0;
+      }
+
+      .modal-image img {
+        max-height: 120px;
+        width: auto;
+      }
+
+      .credits {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-top: 24px;
+      }
+
+      .built-by,
+      .social-links a {
+        font-size: 12px;
+        line-height: 18px;
+      }
+
+      .social-links {
+        gap: 16px;
+      }
+    }
+
+    @media screen and (max-width: 360px) {
+      .share-modal {
+        padding: 20px 16px 16px 16px;
+        border-radius: 20px;
+      }
+
+      .share-modal-title {
+        margin-top: 60px;
+      }
+
+      .modal-image img {
+        max-height: 100px;
+      }
+    }
+
+    /* Modal height adjustments for short screens */
+    @media screen and (max-height: 600px) {
+      .share-modal {
+        max-height: 75vh;
+        padding-top: 20px;
+      }
+
+      .share-modal-title {
+        margin-top: 40px;
+      }
+
+      .modal-image {
+        margin: 8px 0;
+      }
+
+      .modal-image img {
+        max-height: 80px;
+      }
+
+      .credits {
+        margin-top: 16px;
       }
     }
 
