@@ -1865,56 +1865,80 @@
     }).connect(mechClickFilter);
     mechReleaseSynth.volume.value = -20;
 
+    // Shared AudioContext for click sounds (reuse to prevent mobile audio glitches)
+    let clickAudioCtx = null;
+    let clickNoiseBuffer = null;
+
+    function getClickAudioContext() {
+      if (!clickAudioCtx || clickAudioCtx.state === 'closed') {
+        clickAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      // Resume if suspended (required on mobile after user interaction)
+      if (clickAudioCtx.state === 'suspended') {
+        clickAudioCtx.resume();
+      }
+      return clickAudioCtx;
+    }
+
+    function getClickNoiseBuffer(ctx) {
+      // Create noise buffer once and reuse
+      if (!clickNoiseBuffer || clickNoiseBuffer.sampleRate !== ctx.sampleRate) {
+        const bufferSize = ctx.sampleRate * 0.15;
+        clickNoiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = clickNoiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * 0.25;
+        }
+      }
+      return clickNoiseBuffer;
+    }
+
     // Subtle shaker click sound
     function playClickSound() {
       if (isMuted) return;
 
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      try {
+        const ctx = getClickAudioContext();
+        const noiseBuffer = getClickNoiseBuffer(ctx);
 
-      // Create noise buffer
-      const bufferSize = ctx.sampleRate * 0.15;
-      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
+        const noise = ctx.createBufferSource();
+        noise.buffer = noiseBuffer;
 
-      for (let i = 0; i < bufferSize; i++) {
-        output[i] = (Math.random() * 2 - 1) * 0.25;
+        // Filters for smooth, warm sound
+        const lowpass = ctx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.value = 1800;
+        lowpass.Q.value = 0.2;
+
+        const bandpass = ctx.createBiquadFilter();
+        bandpass.type = 'bandpass';
+        bandpass.frequency.value = 1000;
+        bandpass.Q.value = 0.4;
+
+        const lowpass2 = ctx.createBiquadFilter();
+        lowpass2.type = 'lowpass';
+        lowpass2.frequency.value = 2000;
+        lowpass2.Q.value = 0.2;
+
+        // Gentle envelope
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(0, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.045, ctx.currentTime + 0.035);
+        gainNode.gain.linearRampToValueAtTime(0.03, ctx.currentTime + 0.06);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+
+        // Connect
+        noise.connect(lowpass);
+        lowpass.connect(bandpass);
+        bandpass.connect(lowpass2);
+        lowpass2.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        noise.start(ctx.currentTime);
+        noise.stop(ctx.currentTime + 0.15);
+      } catch (e) {
+        console.log('Click sound error:', e);
       }
-
-      const noise = ctx.createBufferSource();
-      noise.buffer = noiseBuffer;
-
-      // Filters for smooth, warm sound
-      const lowpass = ctx.createBiquadFilter();
-      lowpass.type = 'lowpass';
-      lowpass.frequency.value = 1800;
-      lowpass.Q.value = 0.2;
-
-      const bandpass = ctx.createBiquadFilter();
-      bandpass.type = 'bandpass';
-      bandpass.frequency.value = 1000;
-      bandpass.Q.value = 0.4;
-
-      const lowpass2 = ctx.createBiquadFilter();
-      lowpass2.type = 'lowpass';
-      lowpass2.frequency.value = 2000;
-      lowpass2.Q.value = 0.2;
-
-      // Gentle envelope
-      const gainNode = ctx.createGain();
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.045, ctx.currentTime + 0.035);
-      gainNode.gain.linearRampToValueAtTime(0.03, ctx.currentTime + 0.06);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
-
-      // Connect
-      noise.connect(lowpass);
-      lowpass.connect(bandpass);
-      bandpass.connect(lowpass2);
-      lowpass2.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      noise.start(ctx.currentTime);
-      noise.stop(ctx.currentTime + 0.15);
     }
 
     // Play alarm sound (tring tring pattern)
