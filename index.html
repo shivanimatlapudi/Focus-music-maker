@@ -2579,28 +2579,10 @@
       return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    let previousTimeString = '';
-
     function updateTimerDisplay() {
       const timeString = formatTime(remainingSeconds);
       timerDisplay.classList.toggle('active', remainingSeconds > 0 || isTimerRunning);
-      
-      // Build the HTML with individual digit spans
-      let html = '';
-      for (let i = 0; i < timeString.length; i++) {
-        const char = timeString[i];
-        const prevChar = previousTimeString[i] || '';
-        const hasChanged = char !== prevChar && previousTimeString.length > 0;
-        
-        if (char === ':') {
-          html += `<span class="timer-colon">:</span>`;
-        } else {
-          html += `<span class="timer-digit"><span class="timer-digit-inner${hasChanged ? ' changing' : ''}">${char}</span></span>`;
-        }
-      }
-      
-      timerDisplay.innerHTML = html;
-      previousTimeString = timeString;
+      timerDisplay.textContent = timeString;
     }
 
     function startTimer() {
