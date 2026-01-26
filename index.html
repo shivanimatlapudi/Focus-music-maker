@@ -1764,7 +1764,7 @@
     const clearBtn = document.getElementById('clearBtn');
     const muteBtn = document.getElementById('muteBtn');
     // Time options in minutes
-    const TIME_OPTIONS = [5, 15, 30, 45, 60];
+    const TIME_OPTIONS = [5, 15, 30, 45, 60, 75, 90, 105, 120];
 
     // =====================================================
     // INITIALIZE SYNTHS - Mellow Focus Sounds
@@ -2637,8 +2637,8 @@
         [0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0], // Row 4 - Eyes
         [0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0], // Row 5 - Eyes
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // Row 6
-        [0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0], // Row 7 - Smile ends
-        [0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0], // Row 8 - Smile curve
+        [0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0], // Row 7 - Smile ends
+        [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0], // Row 8 - Smile curve
         [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0], // Row 9 - Smile bottom
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]  // Row 10
       ],
@@ -2730,7 +2730,13 @@
     // =====================================================
     function updateTimeDisplay() {
       if (selectedMinutes === 60) {
-        timeValue.textContent = '1 hour';
+        timeValue.textContent = '1 hr';
+      } else if (selectedMinutes === 120) {
+        timeValue.textContent = '2 hrs';
+      } else if (selectedMinutes > 60) {
+        const hrs = Math.floor(selectedMinutes / 60);
+        const mins = selectedMinutes % 60;
+        timeValue.textContent = `${hrs}h ${mins}m`;
       } else {
         timeValue.textContent = `${selectedMinutes} mins`;
       }
