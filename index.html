@@ -2120,30 +2120,54 @@
             break;
             
           case 'breath':
-            // Breathy pad texture
-            synth = new Tone.Synth({
-              oscillator: { type: 'sine' },
-              envelope: {
-                attack: 1,
-                decay: 1.5,
-                sustain: 0.5,
-                release: 2
-              }
-            }).connect(new Tone.Filter({
-              frequency: 2000,
-              type: 'lowpass',
-              Q: 2
-            }).connect(filter));
+            // Breathy pad texture (simpler on mobile - no extra filter)
+            if (isMobile) {
+              synth = new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: {
+                  attack: 0.5,
+                  decay: 1,
+                  sustain: 0.4,
+                  release: 1
+                }
+              }).connect(filter);
+            } else {
+              synth = new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: {
+                  attack: 1,
+                  decay: 1.5,
+                  sustain: 0.5,
+                  release: 2
+                }
+              }).connect(new Tone.Filter({
+                frequency: 2000,
+                type: 'lowpass',
+                Q: 2
+              }).connect(filter));
+            }
             break;
-            
+
           case 'guitar':
-            // Soft muted guitar pluck
-            synth = new Tone.PluckSynth({
-              attackNoise: 0.5,
-              dampening: 2000,
-              resonance: 0.95,
-              release: 1.5
-            }).connect(filter);
+            // Soft muted guitar pluck (use simpler synth on mobile)
+            if (isMobile) {
+              synth = new Tone.Synth({
+                oscillator: { type: 'triangle' },
+                envelope: {
+                  attack: 0.01,
+                  decay: 0.8,
+                  sustain: 0.1,
+                  release: 0.5
+                }
+              }).connect(filter);
+            } else {
+              synth = new Tone.PluckSynth({
+                attackNoise: 0.5,
+                dampening: 2000,
+                resonance: 0.95,
+                release: 1.5
+              }).connect(filter);
+            }
             break;
             
           case 'shaker':
