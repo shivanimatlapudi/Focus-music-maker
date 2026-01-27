@@ -1770,12 +1770,15 @@
     // INITIALIZE SYNTHS - Mellow Focus Sounds
     // =====================================================
     
-    // Global reverb for spaciousness
+    // Detect mobile for lighter audio processing
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    // Global reverb for spaciousness (lighter on mobile)
     const reverb = new Tone.Reverb({
-      decay: 4,
-      wet: 0.5
+      decay: isMobile ? 1.5 : 4,
+      wet: isMobile ? 0.3 : 0.5
     }).toDestination();
-    
+
     // Gentle filter to remove harshness
     const filter = new Tone.Filter({
       frequency: 3500,
@@ -1964,6 +1967,11 @@
       // Only initialize once
       if (synthsInitialized) return;
 
+      // Set higher latency on mobile to prevent glitches
+      if (isMobile) {
+        Tone.context.latencyHint = 'playback';
+      }
+
       // Start Tone.js audio context with user interaction
       try {
         await Tone.start();
@@ -1980,16 +1988,28 @@
 
         switch (inst.type) {
           case 'softpad':
-            // Warm, evolving pad with slow attack
-            synth = new Tone.PolySynth(Tone.Synth, {
-              oscillator: { type: 'sine' },
-              envelope: {
-                attack: 0.8,
-                decay: 1.5,
-                sustain: 0.6,
-                release: 2.5
-              }
-            }).connect(filter);
+            // Warm, evolving pad with slow attack (use Synth on mobile instead of PolySynth)
+            if (isMobile) {
+              synth = new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: {
+                  attack: 0.5,
+                  decay: 1,
+                  sustain: 0.5,
+                  release: 1.5
+                }
+              }).connect(filter);
+            } else {
+              synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sine' },
+                envelope: {
+                  attack: 0.8,
+                  decay: 1.5,
+                  sustain: 0.6,
+                  release: 2.5
+                }
+              }).connect(filter);
+            }
             break;
             
           case 'piano':
