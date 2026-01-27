@@ -1804,27 +1804,18 @@
     }).connect(clickFilter);
     clickSynth.volume.value = -18;
 
-    // Subtle shaker synth for UI buttons - uses Tone.js to share context with main audio
-    const shakerFilter = new Tone.Filter({
-      frequency: 1800,
-      type: 'lowpass',
-      Q: 0.5
-    }).connect(new Tone.Filter({
-      frequency: 1000,
-      type: 'bandpass',
-      Q: 0.4
-    })).toDestination();
+    // Shared AudioContext for shaker click sound (reuse to prevent mobile audio glitches)
+    let shakerAudioCtx = null;
 
-    const shakerSynth = new Tone.NoiseSynth({
-      noise: { type: 'white' },
-      envelope: {
-        attack: 0.005,
-        decay: 0.1,
-        sustain: 0,
-        release: 0.05
+    function getShakerAudioContext() {
+      if (!shakerAudioCtx || shakerAudioCtx.state === 'closed') {
+        shakerAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
-    }).connect(shakerFilter);
-    shakerSynth.volume.value = -24;
+      if (shakerAudioCtx.state === 'suspended') {
+        shakerAudioCtx.resume();
+      }
+      return shakerAudioCtx;
+    }
 
     // Alarm sound for timer completion (tring tring bell)
     const alarmSynth = new Tone.FMSynth({
@@ -1881,16 +1872,57 @@
     }).connect(mechClickFilter);
     mechReleaseSynth.volume.value = -20;
 
-    // Subtle shaker click sound - uses Tone.js to share single audio context
+    // Subtle shaker click sound - original warm shaker with shared AudioContext
     function playClickSound() {
       if (isMuted) return;
 
       try {
-        // Resume Tone context if suspended (mobile requirement)
-        if (Tone.context.state === 'suspended') {
-          Tone.context.resume();
+        const ctx = getShakerAudioContext();
+
+        // Create noise buffer
+        const bufferSize = ctx.sampleRate * 0.15;
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * 0.25;
         }
-        shakerSynth.triggerAttackRelease('8n');
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = noiseBuffer;
+
+        // Filters for smooth, warm sound
+        const lowpass = ctx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.value = 1800;
+        lowpass.Q.value = 0.2;
+
+        const bandpass = ctx.createBiquadFilter();
+        bandpass.type = 'bandpass';
+        bandpass.frequency.value = 1000;
+        bandpass.Q.value = 0.4;
+
+        const lowpass2 = ctx.createBiquadFilter();
+        lowpass2.type = 'lowpass';
+        lowpass2.frequency.value = 2000;
+        lowpass2.Q.value = 0.2;
+
+        // Gentle envelope
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(0, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.045, ctx.currentTime + 0.035);
+        gainNode.gain.linearRampToValueAtTime(0.03, ctx.currentTime + 0.06);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+
+        // Connect
+        noise.connect(lowpass);
+        lowpass.connect(bandpass);
+        bandpass.connect(lowpass2);
+        lowpass2.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        noise.start(ctx.currentTime);
+        noise.stop(ctx.currentTime + 0.15);
       } catch (e) {
         console.log('Click sound error:', e);
       }
