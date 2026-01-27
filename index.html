@@ -1804,17 +1804,14 @@
     }).connect(clickFilter);
     clickSynth.volume.value = -18;
 
-    // Shared AudioContext for shaker click sound (reuse to prevent mobile audio glitches)
-    let shakerAudioCtx = null;
-
+    // Use Tone.js raw context for shaker click sound (prevents multiple AudioContext issues on mobile)
     function getShakerAudioContext() {
-      if (!shakerAudioCtx || shakerAudioCtx.state === 'closed') {
-        shakerAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      // Use Tone.js underlying context to avoid creating separate AudioContext
+      const ctx = Tone.context.rawContext;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
       }
-      if (shakerAudioCtx.state === 'suspended') {
-        shakerAudioCtx.resume();
-      }
-      return shakerAudioCtx;
+      return ctx;
     }
 
     // Alarm sound for timer completion (tring tring bell)
